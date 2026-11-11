@@ -1,0 +1,2072 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:cv="clr-namespace:Camera.MAUI;assembly=Camera.MAUI"
+             x:Class="RawCameraApp.MainPage"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="#000000">
+
+    <Grid IgnoreSafeArea="True" BackgroundColor="#000000">
+        <!-- Stock Camera UI: 3-row layout (Top Bar, Viewfinder 4:3, Bottom Deck) -->
+        <Grid x:Name="CameraUiRoot"
+              RowDefinitions="Auto, *, Auto"
+              BackgroundColor="#000000"
+              Padding="0">
+
+            <!-- 1. Top Bar (Clean, Minimal Stock Camera Icons) -->
+            <Grid Grid.Row="0"
+                  Padding="20, 42, 20, 10"
+                  BackgroundColor="#000000"
+                  ColumnDefinitions="Auto, *, Auto, *, Auto"
+                  ZIndex="10">
+
+                <!-- Left Group: Flash & Torch -->
+                <HorizontalStackLayout Grid.Column="0"
+                                       Spacing="18"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Start">
+                    <!-- Flash Toggle -->
+                    <Grid WidthRequest="40"
+                          HeightRequest="40"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnFlashToggleClicked" />
+                        </Grid.GestureRecognizers>
+                        <Path x:Name="FlashIconPath"
+                              Data="{StaticResource IconFlashAutoData}"
+                              Fill="#FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="22"
+                              HeightRequest="22"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Grid>
+
+                    <!-- Torch Toggle -->
+                    <Grid WidthRequest="40"
+                          HeightRequest="40"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTorchToggleClicked" />
+                        </Grid.GestureRecognizers>
+                        <Path x:Name="TorchIconPath"
+                              Data="{StaticResource IconTorchData}"
+                              Fill="#88FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="20"
+                              HeightRequest="20"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Grid>
+                </HorizontalStackLayout>
+
+                <!-- Center: Brand Logo Mark RAW • PRO (Đồng bộ chuẩn 100% với Icon App) -->
+                <HorizontalStackLayout Grid.Column="2"
+                                       Spacing="7"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center">
+                    <Image Source="app_logo.png"
+                           WidthRequest="22"
+                           HeightRequest="22"
+                           Aspect="AspectFit"
+                           VerticalOptions="Center" />
+                    <Label Text="RAW • PRO"
+                           TextColor="#FFB800"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           CharacterSpacing="1.2"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <!-- Right Group: Timer & Grid -->
+                <HorizontalStackLayout Grid.Column="4"
+                                       Spacing="18"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="End">
+                    <!-- Timer Toggle -->
+                    <Grid WidthRequest="40"
+                          HeightRequest="40"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTimerToggleClicked" />
+                        </Grid.GestureRecognizers>
+                        <Path x:Name="TimerIconPath"
+                              Data="{StaticResource IconTimerData}"
+                              Fill="#88FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="20"
+                              HeightRequest="20"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Grid>
+
+                    <!-- Grid Toggle -->
+                    <Grid WidthRequest="40"
+                          HeightRequest="40"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnGridToggleClicked" />
+                        </Grid.GestureRecognizers>
+                        <Path x:Name="GridIconPath"
+                              Data="{StaticResource IconGrid3x3Data}"
+                              Fill="#88FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="20"
+                              HeightRequest="20"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Grid>
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- 2. Viewfinder Section (Camera Feed + Overlays) -->
+            <Grid Grid.Row="1"
+                  x:Name="ViewfinderContainer"
+                  BackgroundColor="#000000"
+                  HorizontalOptions="FillAndExpand"
+                  VerticalOptions="Center">
+
+                <!-- Live Camera Viewfinder Layer -->
+                <cv:CameraView x:Name="CameraViewControl"
+                               HorizontalOptions="FillAndExpand"
+                               VerticalOptions="FillAndExpand"
+                               AutoStartPreview="False"
+                               CamerasLoaded="OnCamerasLoaded"
+                               Loaded="OnCameraViewLoaded"
+                               SizeChanged="OnCameraViewSizeChanged" />
+
+                <!-- Viewfinder Gesture Detection Area (Tap to Focus, Swipe Modes, Pinch Zoom) -->
+                <Grid x:Name="ViewfinderTouchOverlay"
+                      HorizontalOptions="FillAndExpand"
+                      VerticalOptions="FillAndExpand"
+                      BackgroundColor="Transparent">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnViewfinderTapped" />
+                        <SwipeGestureRecognizer Direction="Left" Swiped="OnViewfinderSwipedLeft" />
+                        <SwipeGestureRecognizer Direction="Right" Swiped="OnViewfinderSwipedRight" />
+                        <PinchGestureRecognizer PinchUpdated="OnViewfinderPinchUpdated" />
+                    </Grid.GestureRecognizers>
+                </Grid>
+
+                <!-- Real-time AI Scene HUD Pill (Độ rộng ổn định, thanh lịch) -->
+                <Border x:Name="AiScenePill"
+                        IsVisible="False"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Start"
+                        Margin="0, 16, 0, 0"
+                        MinimumWidthRequest="120"
+                        BackgroundColor="#CC111111"
+                        Stroke="#55FFCC00"
+                        StrokeThickness="1"
+                        Padding="12, 5"
+                        ZIndex="25">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnAiScenePillTapped" />
+                    </Border.GestureRecognizers>
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center" HorizontalOptions="Center">
+                        <Path x:Name="AiSceneIconPath"
+                              Data="{StaticResource IconAiSparkleData}"
+                              Fill="#FFCC00"
+                              Aspect="Uniform"
+                              WidthRequest="14"
+                              HeightRequest="14"
+                              VerticalOptions="Center" />
+                        <Label x:Name="AiSceneTextLabel"
+                               Text="AI Tự động"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               TextColor="#FFFFFF"
+                               VerticalOptions="Center" />
+                        <Label x:Name="AiEvShiftLabel"
+                               Text=""
+                               FontSize="10"
+                               TextColor="#FFCC00"
+                               VerticalOptions="Center"
+                               IsVisible="False" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- 48 MP Ultra-HD Status Pill -->
+                <Border x:Name="UltraHd48MpPill"
+                        IsVisible="False"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Start"
+                        Margin="0, 16, 0, 0"
+                        BackgroundColor="#CC1C1917"
+                        Stroke="#FFB800"
+                        StrokeThickness="1.2"
+                        Padding="14, 6"
+                        ZIndex="25">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center" HorizontalOptions="Center">
+                        <Label Text="💎" FontSize="12" VerticalOptions="Center" />
+                        <Label Text="Siêu phân giải 48 MP"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               TextColor="#FFB800"
+                               VerticalOptions="Center" />
+                        <Label Text="8000 × 6000"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="#FFFFFF"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Live Processing Status Pill (Hiệu ứng quay khẩu độ khi đang xử lý ảnh) -->
+                <Border x:Name="ProcessingStatusPill"
+                        IsVisible="False"
+                        Opacity="0"
+                        InputTransparent="True"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Start"
+                        Margin="0, 52, 0, 0"
+                        BackgroundColor="#E8141418"
+                        Stroke="#BBFFCC00"
+                        StrokeThickness="1.2"
+                        Padding="14, 6"
+                        ZIndex="28">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="18" />
+                    </Border.StrokeShape>
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <Path x:Name="ProcessingSpinnerIcon"
+                              Data="{StaticResource IconCameraApertureData}"
+                              Fill="#FFCC00"
+                              Aspect="Uniform"
+                              WidthRequest="15"
+                              HeightRequest="15"
+                              VerticalOptions="Center"
+                              AnchorX="0.5"
+                              AnchorY="0.5" />
+                        <Label x:Name="ProcessingStatusLabel"
+                               Text="AI Photonic đang xử lý..."
+                               TextColor="#FFFFFF"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Expandable AI Telemetry Overlay Card -->
+                <Border x:Name="AiTelemetryOverlay"
+                        IsVisible="False"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Start"
+                        Margin="16, 56, 16, 0"
+                        BackgroundColor="#EA121214"
+                        Stroke="#33FFFFFF"
+                        StrokeThickness="1"
+                        Padding="14, 12"
+                        ZIndex="30"
+                        WidthRequest="300">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                                <Path Data="{StaticResource IconBoltTelemetryData}"
+                                      Fill="#FFCC00"
+                                      Aspect="Uniform"
+                                      WidthRequest="13"
+                                      HeightRequest="13"
+                                      VerticalOptions="Center" />
+                                <Label Text="AI REAL-TIME TELEMETRY"
+                                       TextColor="#FFCC00"
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Grid Grid.Column="1"
+                                  WidthRequest="28"
+                                  HeightRequest="28"
+                                  VerticalOptions="Center">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnCloseAiTelemetryTapped" />
+                                </Grid.GestureRecognizers>
+                                <Path Data="{StaticResource IconCloseData}"
+                                      Fill="#88FFFFFF"
+                                      Aspect="Uniform"
+                                      WidthRequest="14"
+                                      HeightRequest="14"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      InputTransparent="True" />
+                            </Grid>
+                        </Grid>
+                        <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto" RowSpacing="6" ColumnSpacing="8">
+                            <Label Grid.Row="0" Grid.Column="0" x:Name="AiTelemetryLuma" Text="Luma: 50%" TextColor="#CCCCCC" FontSize="11" />
+                            <Label Grid.Row="0" Grid.Column="1" x:Name="AiTelemetryContrast" Text="Contrast: Normal" TextColor="#CCCCCC" FontSize="11" />
+                            <Label Grid.Row="1" Grid.Column="0" x:Name="AiTelemetrySkin" Text="Da người: 0%" TextColor="#CCCCCC" FontSize="11" />
+                            <Label Grid.Row="1" Grid.Column="1" x:Name="AiTelemetrySky" Text="Bầu trời: 0%" TextColor="#CCCCCC" FontSize="11" />
+                            <Label Grid.Row="2" Grid.Column="0" x:Name="AiTelemetryFoliage" Text="Cây cối: 0%" TextColor="#CCCCCC" FontSize="11" />
+                            <Label Grid.Row="2" Grid.Column="1" x:Name="AiTelemetryHardwareEv" Text="EV: 0.0" TextColor="#FFCC00" FontSize="11" />
+                            <Label Grid.Row="3" Grid.Column="0" x:Name="AiTelemetryLens" Text="Ống kính: 1x • 26mm" TextColor="#FFCC00" FontSize="10" />
+                            <Label Grid.Row="3" Grid.Column="1" x:Name="AiTelemetrySensor" Text="Cảm biến: 12MP • 1.4µm" TextColor="#88FFFFFF" FontSize="10" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- 3x3 Rule-of-Thirds Grid Overlay (Stock Style) -->
+                <Grid x:Name="RuleOfThirdsGrid"
+                      IsVisible="False"
+                      InputTransparent="True"
+                      HorizontalOptions="FillAndExpand"
+                      VerticalOptions="FillAndExpand"
+                      RowDefinitions="*,*,*"
+                      ColumnDefinitions="*,*,*">
+                    <BoxView Grid.Row="0" Grid.ColumnSpan="3" VerticalOptions="End" HeightRequest="0.8" Color="#33FFFFFF" />
+                    <BoxView Grid.Row="1" Grid.ColumnSpan="3" VerticalOptions="End" HeightRequest="0.8" Color="#33FFFFFF" />
+                    <BoxView Grid.Column="0" Grid.RowSpan="3" HorizontalOptions="End" WidthRequest="0.8" Color="#33FFFFFF" />
+                    <BoxView Grid.Column="1" Grid.RowSpan="3" HorizontalOptions="End" WidthRequest="0.8" Color="#33FFFFFF" />
+                </Grid>
+
+                <!-- Stock Camera Yellow Focus Box & EV Sun -->
+                <Grid x:Name="FocusReticleContainer"
+                      WidthRequest="105"
+                      HeightRequest="68"
+                      HorizontalOptions="Center"
+                      VerticalOptions="Center"
+                      InputTransparent="True"
+                      Opacity="0"
+                      Scale="1.2">
+                    <Border x:Name="FocusReticle"
+                            WidthRequest="64"
+                            HeightRequest="64"
+                            HorizontalOptions="Start"
+                            VerticalOptions="Center"
+                            Stroke="#FFCC00"
+                            StrokeThickness="1.5"
+                            BackgroundColor="Transparent">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="2" />
+                        </Border.StrokeShape>
+                        <BoxView WidthRequest="3" HeightRequest="3" Color="#FFCC00" HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout HorizontalOptions="End" VerticalOptions="Center" Spacing="2" Margin="0,0,4,0">
+                        <Path Data="{StaticResource IconSunEvData}"
+                              Fill="#FFCC00"
+                              Aspect="Uniform"
+                              WidthRequest="18"
+                              HeightRequest="18"
+                              HorizontalOptions="Center" />
+                        <Label x:Name="FocusEvLabel"
+                               Text="+0.0"
+                               TextColor="#FFCC00"
+                               FontSize="10"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- Shutter Feedback Curtain Overlay (Black DSLR Shutter / Front Retina Flash) -->
+                <BoxView x:Name="ShutterFlash"
+                         Color="#000000"
+                         BackgroundColor="Transparent"
+                         IsVisible="False"
+                         Opacity="0"
+                         ZIndex="45"
+                         InputTransparent="True"
+                         HorizontalOptions="FillAndExpand"
+                         VerticalOptions="FillAndExpand" />
+
+                <!-- Countdown Timer Center Display -->
+                <Border x:Name="CountdownOverlay"
+                        IsVisible="False"
+                        InputTransparent="True"
+                        WidthRequest="100"
+                        HeightRequest="100"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        BackgroundColor="#80000000"
+                        Stroke="#FFCC00"
+                        StrokeThickness="2.5">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="50" />
+                    </Border.StrokeShape>
+                    <Label x:Name="CountdownLabel"
+                           Text="3"
+                           TextColor="#FFCC00"
+                           FontSize="54"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                </Border>
+
+                <!-- Floating AI Strength Slider Bar (Xuất hiện thanh lịch khi tinh chỉnh cường độ) -->
+                <Border x:Name="AiStrengthFloatingBar"
+                        IsVisible="False"
+                        HorizontalOptions="Center"
+                        VerticalOptions="End"
+                        Margin="0, 0, 0, 56"
+                        BackgroundColor="#E61A1A1A"
+                        Stroke="#33FFFFFF"
+                        StrokeThickness="1"
+                        Padding="14, 6"
+                        ZIndex="20">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <Label x:Name="AiStrengthLabel"
+                               Text="AI: 75%"
+                               TextColor="#FFCC00"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center" />
+                        <Slider x:Name="AiStrengthSlider"
+                                WidthRequest="140"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="75"
+                                MinimumTrackColor="#FFCC00"
+                                MaximumTrackColor="#44FFFFFF"
+                                ThumbColor="#FFCC00"
+                                ValueChanged="OnAiStrengthSliderValueChanged" />
+                        <Grid WidthRequest="26"
+                              HeightRequest="26"
+                              VerticalOptions="Center">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnCloseAiStrengthTapped" />
+                            </Grid.GestureRecognizers>
+                            <Path Data="{StaticResource IconCloseData}"
+                                  Fill="#88FFFFFF"
+                                  Aspect="Uniform"
+                                  WidthRequest="13"
+                                  HeightRequest="13"
+                                  HorizontalOptions="Center"
+                                  VerticalOptions="Center"
+                                  InputTransparent="True" />
+                        </Grid>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Active Lens Optical Spec Pill (Ví dụ: 16mm f/2.2 • 8MP) -->
+                <Border x:Name="ActiveLensSpecPill"
+                        IsVisible="False"
+                        Opacity="0"
+                        HorizontalOptions="Center"
+                        VerticalOptions="End"
+                        Margin="0, 0, 0, 56"
+                        BackgroundColor="#D9111114"
+                        Stroke="#33FFFFFF"
+                        StrokeThickness="1"
+                        Padding="12, 4"
+                        ZIndex="6">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12" />
+                    </Border.StrokeShape>
+                    <Label x:Name="ActiveLensSpecLabel"
+                           Text="26mm f/1.8 • 12MP"
+                           TextColor="#DDFFFFFF"
+                           FontSize="11"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                </Border>
+
+                <!-- Floating Multi-Lens Selector ([0.6x], [1x], [2x], [Macro]) at bottom of viewfinder -->
+                <Border HorizontalOptions="Center"
+                        VerticalOptions="End"
+                        Margin="0, 0, 0, 14"
+                        BackgroundColor="#66000000"
+                        Stroke="#22FFFFFF"
+                        StrokeThickness="1"
+                        Padding="3, 3"
+                        ZIndex="5">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="18" />
+                    </Border.StrokeShape>
+                    <HorizontalStackLayout x:Name="LensSelectorStack" Spacing="4">
+                        <!-- Ultra-Wide Button (0.5x / 0.6x) -->
+                        <Border x:Name="ZoomUwBtn"
+                                WidthRequest="36"
+                                HeightRequest="34"
+                                BackgroundColor="Transparent"
+                                IsVisible="False">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="17" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnZoomUwClicked" />
+                            </Border.GestureRecognizers>
+                            <Label x:Name="ZoomUwLabel"
+                                   Text="0.6x"
+                                   TextColor="#FFFFFF"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   InputTransparent="True" />
+                        </Border>
+
+                        <!-- 1x Button (Main Wide / Selfie) -->
+                        <Border x:Name="Zoom1xBtn"
+                                WidthRequest="36"
+                                HeightRequest="34"
+                                BackgroundColor="#FFCC00">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="17" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnZoom1xClicked" />
+                            </Border.GestureRecognizers>
+                            <Label x:Name="Zoom1xLabel"
+                                   Text="1x"
+                                   TextColor="#000000"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   InputTransparent="True" />
+                        </Border>
+
+                        <!-- 2x Button (Telephoto / 2x In-Sensor Crop) -->
+                        <Border x:Name="Zoom2xBtn"
+                                WidthRequest="36"
+                                HeightRequest="34"
+                                BackgroundColor="Transparent">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="17" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnZoom2xClicked" />
+                            </Border.GestureRecognizers>
+                            <Label x:Name="Zoom2xLabel"
+                                   Text="2x"
+                                   TextColor="#FFFFFF"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   InputTransparent="True" />
+                        </Border>
+
+                        <!-- Macro Button (Chỉ hiển thị khi máy có camera Macro vật lý) -->
+                        <Border x:Name="ZoomMacroBtn"
+                                WidthRequest="48"
+                                HeightRequest="34"
+                                BackgroundColor="Transparent"
+                                IsVisible="False">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="17" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnZoomMacroClicked" />
+                            </Border.GestureRecognizers>
+                            <Label x:Name="ZoomMacroLabel"
+                                   Text="Macro"
+                                   TextColor="#FFFFFF"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   InputTransparent="True" />
+                        </Border>
+                    </HorizontalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- 3. Bottom Deck (Mode Strip + Stock Shutter Row) -->
+            <VerticalStackLayout Grid.Row="2"
+                                 BackgroundColor="#000000"
+                                 Spacing="0"
+                                 ZIndex="10">
+
+                <!-- Control Slot Container: Cố định cùng chiều cao 42dp cho tất cả các chế độ -->
+                <Grid HeightRequest="42"
+                      Margin="0, 2, 0, 2"
+                      HorizontalOptions="FillAndExpand">
+
+                    <!-- AI CAM Feature Selector Pills (Chế độ chụp AI) -->
+                    <ScrollView x:Name="AiControlsBar"
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                HorizontalOptions="FillAndExpand"
+                                IsVisible="False">
+                        <HorizontalStackLayout Spacing="8"
+                                               Padding="16, 2"
+                                               VerticalOptions="Center">
+                            <!-- AI Auto -->
+                            <Border x:Name="AiModeAutoPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#FFCC00"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnAiModeAutoTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="AiModeAutoIcon"
+                                          Data="{StaticResource IconAiSparkleData}"
+                                          Fill="#000000"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="AiModeAutoLabel" Text="Tự động" FontSize="11" FontAttributes="Bold" TextColor="#000000" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- AI Portrait -->
+                            <Border x:Name="AiModePortraitPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnAiModePortraitTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="AiModePortraitIcon"
+                                          Data="{StaticResource IconPortraitData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="AiModePortraitLabel" Text="Chân dung" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- AI Night -->
+                            <Border x:Name="AiModeNightPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnAiModeNightTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="AiModeNightIcon"
+                                          Data="{StaticResource IconNightData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="AiModeNightLabel" Text="Chụp đêm" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- AI Landscape -->
+                            <Border x:Name="AiModeLandscapePill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnAiModeLandscapeTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="AiModeLandscapeIcon"
+                                          Data="{StaticResource IconLandscapeData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="AiModeLandscapeLabel" Text="Phong cảnh" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- AI Detail -->
+                            <Border x:Name="AiModeDetailPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnAiModeDetailTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="AiModeDetailIcon"
+                                          Data="{StaticResource IconDetailData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="AiModeDetailLabel" Text="Siêu nét" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- AI Strength Quick Button -->
+                            <Border x:Name="AiStrengthQuickBtn"
+                                    Padding="10, 5"
+                                    BackgroundColor="#33FFCC00"
+                                    Stroke="#66FFCC00"
+                                    StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnToggleAiStrengthTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="AiStrengthQuickIcon"
+                                          Data="{StaticResource IconTuneData}"
+                                          Fill="#FFCC00"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="AiStrengthQuickLabel" Text="75%" FontSize="11" FontAttributes="Bold" TextColor="#FFCC00" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- RAW • PRO Photographic Styles Selector Pills -->
+                    <ScrollView x:Name="StyleSelectorBar"
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                HorizontalOptions="FillAndExpand"
+                                IsVisible="True">
+                        <HorizontalStackLayout Spacing="8"
+                                               Padding="16, 2"
+                                               VerticalOptions="Center">
+                            <!-- Standard Style -->
+                            <Border x:Name="StyleStandardPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#FFCC00"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnStyleStandardTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="StyleStandardIcon"
+                                          Data="{StaticResource IconStyleStandardData}"
+                                          Fill="#000000"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="StyleStandardLabel" Text="Chuẩn" FontSize="11" FontAttributes="Bold" TextColor="#000000" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Warm Style -->
+                            <Border x:Name="StyleWarmPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnStyleWarmTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="StyleWarmIcon"
+                                          Data="{StaticResource IconStyleWarmData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="StyleWarmLabel" Text="Ấm áp" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Vibrant Style -->
+                            <Border x:Name="StyleVibrantPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnStyleVibrantTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="StyleVibrantIcon"
+                                          Data="{StaticResource IconStyleVibrantData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="StyleVibrantLabel" Text="Rực rỡ" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Rich Contrast Style -->
+                            <Border x:Name="StyleRichContrastPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnStyleRichContrastTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="StyleRichContrastIcon"
+                                          Data="{StaticResource IconStyleContrastData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="StyleRichContrastLabel" Text="Tương phản" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+
+                            <!-- Cool Style -->
+                            <Border x:Name="StyleCoolPill"
+                                    Padding="10, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="Transparent">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnStyleCoolTapped" />
+                                </Border.GestureRecognizers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Path x:Name="StyleCoolIcon"
+                                          Data="{StaticResource IconStyleCoolData}"
+                                          Fill="#E0FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="12"
+                                          HeightRequest="12"
+                                          VerticalOptions="Center" />
+                                    <Label x:Name="StyleCoolLabel" Text="Mát mẻ" FontSize="11" FontAttributes="Bold" TextColor="#E0FFFFFF" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Raw Sensor Pass-Through Indicator (Chế độ ảnh gốc) -->
+                    <ScrollView x:Name="RawControlsBar"
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                HorizontalOptions="FillAndExpand"
+                                IsVisible="False">
+                        <HorizontalStackLayout Spacing="8"
+                                               Padding="16, 2"
+                                               VerticalOptions="Center">
+                            <Border Padding="12, 5"
+                                    BackgroundColor="#26FFFFFF"
+                                    Stroke="#44FFCC00"
+                                    StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                                    <Path Data="{StaticResource IconRawSensorData}"
+                                          Fill="#FFCC00"
+                                          Aspect="Uniform"
+                                          WidthRequest="13"
+                                          HeightRequest="13"
+                                          VerticalOptions="Center" />
+                                    <Label Text="100% Cảm biến RAW • Bayer Pass-Through"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="#FFCC00"
+                                           VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </Border>
+                        </HorizontalStackLayout>
+                    </ScrollView>
+                </Grid>
+
+                <!-- Stock Camera Mode Strip có Cử chỉ vuốt trái/phải -->
+                <Grid x:Name="CameraModeStrip"
+                      Padding="0, 8, 0, 10"
+                      ColumnDefinitions="*, *, *, *"
+                      HorizontalOptions="FillAndExpand">
+                    <Grid.GestureRecognizers>
+                        <SwipeGestureRecognizer Direction="Left" Swiped="OnViewfinderSwipedLeft" />
+                        <SwipeGestureRecognizer Direction="Right" Swiped="OnViewfinderSwipedRight" />
+                    </Grid.GestureRecognizers>
+
+                    <!-- AI CAM Mode -->
+                    <VerticalStackLayout Grid.Column="0" Spacing="4" HorizontalOptions="Center">
+                        <Label x:Name="ModeAiLabel"
+                               Text="AI CAM"
+                               TextColor="#77FFFFFF"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center" />
+                        <BoxView x:Name="ModeAiDot"
+                                 WidthRequest="4"
+                                 HeightRequest="4"
+                                 CornerRadius="2"
+                                 Color="#FFCC00"
+                                 IsVisible="False"
+                                 HorizontalOptions="Center" />
+                        <VerticalStackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnAiCameraModeTapped" />
+                        </VerticalStackLayout.GestureRecognizers>
+                    </VerticalStackLayout>
+
+                    <!-- PHOTO Mode (Mặc định: Tiêu chuẩn RAW • PRO) -->
+                    <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="Center">
+                        <Label x:Name="ModePhotoLabel"
+                               Text="PHOTO"
+                               TextColor="#FFCC00"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center" />
+                        <BoxView x:Name="ModePhotoDot"
+                                 WidthRequest="4"
+                                 HeightRequest="4"
+                                 CornerRadius="2"
+                                 Color="#FFCC00"
+                                 IsVisible="True"
+                                 HorizontalOptions="Center" />
+                        <VerticalStackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnPhotoModeTapped" />
+                        </VerticalStackLayout.GestureRecognizers>
+                    </VerticalStackLayout>
+
+                    <!-- 48 MP Mode (Siêu phân giải 8000x6000 Quad-Bayer) -->
+                    <VerticalStackLayout Grid.Column="2" Spacing="4" HorizontalOptions="Center">
+                        <Label x:Name="Mode48MpLabel"
+                               Text="48 MP"
+                               TextColor="#77FFFFFF"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center" />
+                        <BoxView x:Name="Mode48MpDot"
+                                 WidthRequest="4"
+                                 HeightRequest="4"
+                                 CornerRadius="2"
+                                 Color="#FFB800"
+                                 IsVisible="False"
+                                 HorizontalOptions="Center" />
+                        <VerticalStackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="On48MpModeTapped" />
+                        </VerticalStackLayout.GestureRecognizers>
+                    </VerticalStackLayout>
+
+                    <!-- GỐC Mode (Ảnh gốc chưa xử lý) -->
+                    <VerticalStackLayout Grid.Column="3" Spacing="4" HorizontalOptions="Center">
+                        <Label x:Name="ModeRawLabel"
+                               Text="GỐC"
+                               TextColor="#77FFFFFF"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center" />
+                        <BoxView x:Name="ModeRawDot"
+                                 WidthRequest="4"
+                                 HeightRequest="4"
+                                 CornerRadius="2"
+                                 Color="#FFCC00"
+                                 IsVisible="False"
+                                 HorizontalOptions="Center" />
+                        <VerticalStackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnRawPhotoModeTapped" />
+                        </VerticalStackLayout.GestureRecognizers>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- Stock Camera Shutter Row -->
+                <Grid ColumnDefinitions="*, Auto, *"
+                      Padding="28, 2, 28, 24"
+                      VerticalOptions="Center">
+
+                    <!-- Left: Gallery Thumbnail with Live Processing Spinner & Queue Badge -->
+                    <Grid Grid.Column="0"
+                          WidthRequest="58"
+                          HeightRequest="58"
+                          HorizontalOptions="Start"
+                          VerticalOptions="Center">
+                        <Border x:Name="ThumbnailBorder"
+                                WidthRequest="52"
+                                HeightRequest="52"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                Stroke="#44FFFFFF"
+                                StrokeThickness="1.5"
+                                BackgroundColor="#1A1A1A">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="26" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnThumbnailClicked" />
+                            </Border.GestureRecognizers>
+                            <Grid>
+                                <Path x:Name="ThumbnailEmptyPath"
+                                      Data="{StaticResource IconPhotoLibraryData}"
+                                      Fill="#66FFFFFF"
+                                      Aspect="Uniform"
+                                      WidthRequest="22"
+                                      HeightRequest="22"
+                                      HorizontalOptions="Center"
+                                      VerticalOptions="Center"
+                                      InputTransparent="True" />
+                                <Image x:Name="LastCapturedPreview"
+                                       Aspect="AspectFill"
+                                       WidthRequest="52"
+                                       HeightRequest="52"
+                                       InputTransparent="True" />
+
+                                <!-- Processing Spinner Overlay on Thumbnail -->
+                                <Grid x:Name="ThumbnailProcessingOverlay"
+                                      IsVisible="False"
+                                      BackgroundColor="#AA000000"
+                                      InputTransparent="True">
+                                    <Path x:Name="ThumbnailSpinnerPath"
+                                          Data="{StaticResource IconCameraApertureData}"
+                                          Fill="#FFCC00"
+                                          Aspect="Uniform"
+                                          WidthRequest="22"
+                                          HeightRequest="22"
+                                          HorizontalOptions="Center"
+                                          VerticalOptions="Center"
+                                          AnchorX="0.5"
+                                          AnchorY="0.5" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- Active Queue Badge (Top-Right of Thumbnail) -->
+                        <Border x:Name="ProcessingQueueBadge"
+                                IsVisible="False"
+                                HorizontalOptions="End"
+                                VerticalOptions="Start"
+                                WidthRequest="20"
+                                HeightRequest="20"
+                                BackgroundColor="#FFCC00"
+                                Stroke="#000000"
+                                StrokeThickness="1.5"
+                                InputTransparent="True">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Label x:Name="ProcessingQueueCountLabel"
+                                   Text="1"
+                                   TextColor="#000000"
+                                   FontSize="10"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Border>
+                    </Grid>
+
+                    <!-- Center: Stock Camera Circular Shutter Button -->
+                    <Border Grid.Column="1"
+                            x:Name="ShutterOuterRing"
+                            Stroke="#FFFFFF"
+                            StrokeThickness="4"
+                            WidthRequest="76"
+                            HeightRequest="76"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            BackgroundColor="Transparent">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="38" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShutterClicked" />
+                        </Border.GestureRecognizers>
+
+                        <!-- Solid Inner Shutter Core -->
+                        <Border x:Name="ShutterCore"
+                                BackgroundColor="#FFFFFF"
+                                WidthRequest="62"
+                                HeightRequest="62"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="31" />
+                            </Border.StrokeShape>
+                        </Border>
+                    </Border>
+
+                    <!-- Right: Stock Flip Camera Button -->
+                    <Border Grid.Column="2"
+                            x:Name="SwitchCamBorder"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            BackgroundColor="#222225"
+                            Stroke="#33FFFFFF"
+                            StrokeThickness="1">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="25" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSwitchCameraClicked" />
+                        </Border.GestureRecognizers>
+                        <Path x:Name="SwitchCamIcon"
+                              Data="{StaticResource IconCameraSwitchData}"
+                              Fill="#FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="24"
+                              HeightRequest="24"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Toast Notification Pill -->
+        <Border x:Name="ToastNotification"
+                IsVisible="False"
+                Opacity="0"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Margin="0, -180, 0, 0"
+                BackgroundColor="#E6101012"
+                Stroke="#33FFFFFF"
+                StrokeThickness="1"
+                Padding="16, 8"
+                ZIndex="20">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="18" />
+            </Border.StrokeShape>
+            <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                <Path x:Name="ToastCheckIcon"
+                      Data="{StaticResource IconCheckData}"
+                      Fill="#34D399"
+                      Aspect="Uniform"
+                      WidthRequest="14"
+                      HeightRequest="14"
+                      VerticalOptions="Center"
+                      AnchorX="0.5"
+                      AnchorY="0.5" />
+                <Label x:Name="ToastLabel"
+                       Text="Đã lưu vào Thư viện"
+                       TextColor="#FFFFFF"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Dual-Mode Photo Gallery & Management Modal -->
+        <Grid x:Name="PhotoPreviewModal"
+              IsVisible="False"
+              BackgroundColor="#000000"
+              Padding="0"
+              ZIndex="30">
+
+            <!-- MODE 1: Single Photo Fullscreen Lightbox Viewer -->
+            <Grid x:Name="SinglePhotoView"
+                  RowDefinitions="Auto, *, Auto"
+                  Padding="16, 44, 16, 24"
+                  BackgroundColor="#000000"
+                  IsVisible="True">
+
+                <!-- Lightbox Header -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto">
+                    <!-- Close button -->
+                    <Border Grid.Column="0"
+                            BackgroundColor="#262626"
+                            Padding="12, 6">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnCloseModalClicked" />
+                        </Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                            <Path Data="{StaticResource IconCloseData}"
+                                  Fill="#FFFFFF"
+                                  Aspect="Uniform"
+                                  WidthRequest="13"
+                                  HeightRequest="13"
+                                  VerticalOptions="Center" />
+                            <Label Text="Đóng"
+                                   TextColor="#FFFFFF"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <!-- Center: Clean Photo Index Counter -->
+                    <Label x:Name="ModalIndexLabel"
+                           Grid.Column="1"
+                           Text="1 / 1"
+                           TextColor="#FFFFFF"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+                    <!-- Top Right: Grid toggle & Mode badge -->
+                    <HorizontalStackLayout Grid.Column="2" Spacing="8" VerticalOptions="Center" HorizontalOptions="End">
+                        <Border BackgroundColor="#262626"
+                                Padding="10, 6">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSwitchToGridViewClicked" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                <Path Data="{StaticResource IconGridGalleryData}"
+                                      Fill="#FFCC00"
+                                      Aspect="Uniform"
+                                      WidthRequest="13"
+                                      HeightRequest="13"
+                                      VerticalOptions="Center" />
+                                <Label Text="Lưới"
+                                       TextColor="#FFCC00"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <Border BackgroundColor="#22FFCC00"
+                                Stroke="#44FFCC00"
+                                StrokeThickness="1"
+                                Padding="10, 5"
+                                VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+                            <Label x:Name="ModalBadgeLabel"
+                                   Text="CAM AI"
+                                   TextColor="#FFCC00"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                        </Border>
+                    </HorizontalStackLayout>
+                </Grid>
+
+                <!-- Center: Large Image with Left/Right Chevrons and Swipe Gestures -->
+                <Grid Grid.Row="1" Margin="0, 14">
+                    <Grid.GestureRecognizers>
+                        <SwipeGestureRecognizer Direction="Left" Swiped="OnPhotoSwipedNext" />
+                        <SwipeGestureRecognizer Direction="Right" Swiped="OnPhotoSwipedPrev" />
+                    </Grid.GestureRecognizers>
+
+                    <Image x:Name="ModalPreviewImage"
+                           Aspect="AspectFit"
+                           HorizontalOptions="FillAndExpand"
+                           VerticalOptions="FillAndExpand" />
+
+                    <!-- Prev Button (Left) -->
+                    <Border x:Name="BtnPrevPhoto"
+                            HorizontalOptions="Start"
+                            VerticalOptions="Center"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            BackgroundColor="#66000000"
+                            Stroke="#44FFFFFF"
+                            StrokeThickness="1">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="21" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnPrevPhotoClicked" />
+                        </Border.GestureRecognizers>
+                        <Path Data="{StaticResource IconChevronLeftData}"
+                              Fill="#FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="18"
+                              HeightRequest="18"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Border>
+
+                    <!-- Next Button (Right) -->
+                    <Border x:Name="BtnNextPhoto"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            BackgroundColor="#66000000"
+                            Stroke="#44FFFFFF"
+                            StrokeThickness="1">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="21" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnNextPhotoClicked" />
+                        </Border.GestureRecognizers>
+                        <Path Data="{StaticResource IconChevronRightData}"
+                              Fill="#FFFFFF"
+                              Aspect="Uniform"
+                              WidthRequest="18"
+                              HeightRequest="18"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Border>
+
+                    <!-- Interactive Mask Canvas (Lớp vẽ cọ cảm ứng tô vật thể) -->
+                    <GraphicsView x:Name="MaskCanvasView"
+                                  IsVisible="False"
+                                  HorizontalOptions="FillAndExpand"
+                                  VerticalOptions="FillAndExpand"
+                                  ZIndex="20"
+                                  StartInteraction="OnMaskCanvasStartInteraction"
+                                  DragInteraction="OnMaskCanvasDragInteraction"
+                                  EndInteraction="OnMaskCanvasEndInteraction" />
+
+                    <!-- Brush Tools Floating Bar (Khi đang mở cọ tô) -->
+                    <Border x:Name="BrushToolBar"
+                            IsVisible="False"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Start"
+                            Margin="0, 8, 0, 0"
+                            BackgroundColor="#EE141418"
+                            Stroke="#44FFFFFF"
+                            StrokeThickness="1"
+                            Padding="10, 6"
+                            ZIndex="25">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                            <!-- Size Small (16px) -->
+                            <Border x:Name="BrushSizeSmallBorder" BackgroundColor="#22FFFFFF" WidthRequest="30" HeightRequest="30">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="15" /></Border.StrokeShape>
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnBrushSizeSmallClicked" /></Border.GestureRecognizers>
+                                <BoxView WidthRequest="6" HeightRequest="6" CornerRadius="3" Color="#FFFFFF" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <!-- Size Medium (28px - active) -->
+                            <Border x:Name="BrushSizeMedBorder" BackgroundColor="#FFCC00" WidthRequest="30" HeightRequest="30">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="15" /></Border.StrokeShape>
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnBrushSizeMedClicked" /></Border.GestureRecognizers>
+                                <BoxView WidthRequest="12" HeightRequest="12" CornerRadius="6" Color="#000000" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <!-- Size Large (48px) -->
+                            <Border x:Name="BrushSizeLargeBorder" BackgroundColor="#22FFFFFF" WidthRequest="30" HeightRequest="30">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="15" /></Border.StrokeShape>
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnBrushSizeLargeClicked" /></Border.GestureRecognizers>
+                                <BoxView WidthRequest="18" HeightRequest="18" CornerRadius="9" Color="#FFFFFF" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <BoxView WidthRequest="1" HeightRequest="18" Color="#33FFFFFF" VerticalOptions="Center" />
+                            <!-- Undo -->
+                            <Border BackgroundColor="#22FFFFFF" Padding="8, 4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnBrushUndoClicked" /></Border.GestureRecognizers>
+                                <Label Text="↩ Hoàn tác" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" />
+                            </Border>
+                            <!-- Clear -->
+                            <Border BackgroundColor="#22FFFFFF" Padding="8, 4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnBrushClearClicked" /></Border.GestureRecognizers>
+                                <Label Text="🗑️ Xóa nét" TextColor="#EF4444" FontSize="11" FontAttributes="Bold" />
+                            </Border>
+                            <!-- Close Brush -->
+                            <Border BackgroundColor="#44EF4444" Padding="8, 4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnCloseBrushClicked" /></Border.GestureRecognizers>
+                                <Label Text="✕ Đóng" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" />
+                            </Border>
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <!-- AI Prompt Input Drawer (Dưới đáy ảnh khi mở cọ) -->
+                    <Border x:Name="AiPromptDrawer"
+                            IsVisible="False"
+                            VerticalOptions="End"
+                            Margin="8, 0, 8, 8"
+                            BackgroundColor="#F2141418"
+                            Stroke="#66EF4444"
+                            StrokeThickness="1"
+                            Padding="12, 10"
+                            ZIndex="25">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <!-- Quick Suggestion Chips -->
+                            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                                <HorizontalStackLayout Spacing="6" Padding="0, 0, 16, 0">
+                                    <Border BackgroundColor="#33EF4444" Stroke="#88EF4444" StrokeThickness="0.8" Padding="8, 4">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnQuickChipEraseTapped" /></Border.GestureRecognizers>
+                                        <Label Text="🧹 Xóa vật thể" TextColor="#FCA5A5" FontSize="10" FontAttributes="Bold" />
+                                    </Border>
+                                    <Border BackgroundColor="#2A2A32" Stroke="#44FFFFFF" StrokeThickness="0.8" Padding="8, 4">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnQuickChipBrightenTapped" /></Border.GestureRecognizers>
+                                        <Label Text="💡 Làm sáng" TextColor="#FFFFFF" FontSize="10" />
+                                    </Border>
+                                    <Border BackgroundColor="#2A2A32" Stroke="#44FFFFFF" StrokeThickness="0.8" Padding="8, 4">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnQuickChipBlurTapped" /></Border.GestureRecognizers>
+                                        <Label Text="🌿 Xóa phông" TextColor="#FFFFFF" FontSize="10" />
+                                    </Border>
+                                    <Border BackgroundColor="#2A2A32" Stroke="#44FFFFFF" StrokeThickness="0.8" Padding="8, 4">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnQuickChipColorTapped" /></Border.GestureRecognizers>
+                                        <Label Text="🎨 Đổi màu" TextColor="#FFFFFF" FontSize="10" />
+                                    </Border>
+                                    <Border BackgroundColor="#2A2A32" Stroke="#44FFFFFF" StrokeThickness="0.8" Padding="8, 4">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnQuickChipSharpenTapped" /></Border.GestureRecognizers>
+                                        <Label Text="💎 Tăng nét" TextColor="#FFFFFF" FontSize="10" />
+                                    </Border>
+                                </HorizontalStackLayout>
+                            </ScrollView>
+
+                            <!-- Entry & Submit Button -->
+                            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                                <Border Grid.Column="0" BackgroundColor="#202028" Stroke="#44FFFFFF" StrokeThickness="0.8" Padding="10, 2">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                    <Entry x:Name="AiPromptEntry"
+                                           Placeholder="Nhập lệnh AI: xóa vật thể này, làm sáng..."
+                                           PlaceholderColor="#888888"
+                                           TextColor="#FFFFFF"
+                                           FontSize="12"
+                                           BackgroundColor="Transparent"
+                                           Completed="OnPromptEntryCompleted" />
+                                </Border>
+                                <Border Grid.Column="1"
+                                        BackgroundColor="#EF4444"
+                                        Padding="14, 8">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnExecutePromptTapped" />
+                                    </Border.GestureRecognizers>
+                                    <Label Text="✨ Thực thi" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Collapsible AI Studio Drawer Panel (Overlay inside image area) -->
+                    <Border x:Name="AiStudioPanel"
+                            IsVisible="False"
+                            VerticalOptions="End"
+                            Margin="8, 0, 8, 8"
+                            BackgroundColor="#EE141418"
+                            Stroke="#66FFB800"
+                            StrokeThickness="1"
+                            Padding="14, 12">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="9">
+                            <!-- AI Studio Header -->
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <HorizontalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="Center">
+                                    <Path Data="{StaticResource IconAiSparkleData}"
+                                          Fill="#FFB800"
+                                          Aspect="Uniform"
+                                          WidthRequest="15"
+                                          HeightRequest="15"
+                                          VerticalOptions="Center" />
+                                    <Label Text="AI STUDIO"
+                                           TextColor="#FFB800"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           CharacterSpacing="1"
+                                           VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+
+                                <Border Grid.Column="2"
+                                        WidthRequest="26"
+                                        HeightRequest="26"
+                                        BackgroundColor="#22FFFFFF"
+                                        StrokeThickness="0"
+                                        HorizontalOptions="End">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="13" /></Border.StrokeShape>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnToggleAiStudioClicked" />
+                                    </Border.GestureRecognizers>
+                                    <Path Data="{StaticResource IconCloseData}"
+                                          Fill="#FFFFFF"
+                                          Aspect="Uniform"
+                                          WidthRequest="10"
+                                          HeightRequest="10"
+                                          HorizontalOptions="Center"
+                                          VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
+
+                            <!-- Diagnosis Live Callout -->
+                            <Border BackgroundColor="#1E1E24"
+                                    Stroke="#33FFFFFF"
+                                    StrokeThickness="0.6"
+                                    Padding="10, 6">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Label x:Name="AiDiagnosisLabel"
+                                       Text="Đang chẩn đoán bối cảnh ảnh..."
+                                       TextColor="#DDDDDD"
+                                       FontSize="11"
+                                       LineBreakMode="WordWrap" />
+                            </Border>
+
+                            <!-- AI Actions in Horizontal Scrollable Ribbon -->
+                            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                                <HorizontalStackLayout Spacing="8">
+                                    <!-- 0. Tô vật thể & Nhập Prompt AI -->
+                                    <Border BackgroundColor="#44EF4444" Padding="10, 6" Stroke="#EF4444" StrokeThickness="1">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnStartMaskBrushTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Label Text="🪄" FontSize="11" VerticalOptions="Center" />
+                                            <Label Text="Tô vật thể &amp; Lệnh AI" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- 1. AutoMaster -->
+                                    <Border BackgroundColor="#2A2A32" Padding="10, 6" Stroke="#44FFFFFF" StrokeThickness="0.8">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAiAutoMasterTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Path Data="{StaticResource IconAiSparkleData}" Fill="#FFCC00" Aspect="Uniform" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                            <Label Text="Tối ưu tự động" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- 2. SubjectRelight -->
+                                    <Border BackgroundColor="#2A2A32" Padding="10, 6" Stroke="#44FFFFFF" StrokeThickness="0.8">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAiSubjectRelightTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Path Data="{StaticResource IconSunEvData}" Fill="#FFB800" Aspect="Uniform" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                            <Label Text="Chiếu sáng chủ thể" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- 3. SemanticBokeh -->
+                                    <Border BackgroundColor="#2A2A32" Padding="10, 6" Stroke="#44FFFFFF" StrokeThickness="0.8">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAiSemanticBokehTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Path Data="{StaticResource IconPortraitData}" Fill="#A78BFA" Aspect="Uniform" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                            <Label Text="Xóa phông nghệ thuật" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- 4. SmartHdrSky -->
+                                    <Border BackgroundColor="#2A2A32" Padding="10, 6" Stroke="#44FFFFFF" StrokeThickness="0.8">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAiSmartHdrSkyTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Path Data="{StaticResource IconHdrSunData}" Fill="#38BDF8" Aspect="Uniform" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                            <Label Text="Khôi phục mây trời HDR" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- 5. CinematicLut -->
+                                    <Border BackgroundColor="#2A2A32" Padding="10, 6" Stroke="#44FFFFFF" StrokeThickness="0.8">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAiCinematicLutTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Path Data="{StaticResource IconStyleContrastData}" Fill="#F43F5E" Aspect="Uniform" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                            <Label Text="Màu điện ảnh" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- 6. SuperSharpDetail -->
+                                    <Border BackgroundColor="#2A2A32" Padding="10, 6" Stroke="#44FFFFFF" StrokeThickness="0.8">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAiSuperSharpTapped" /></Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Path Data="{StaticResource IconDetailData}" Fill="#34D399" Aspect="Uniform" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                            <Label Text="Siêu sắc nét vi mô" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+                                </HorizontalStackLayout>
+                            </ScrollView>
+
+                            <!-- AI Edited Controls (Compare Original, Save Copy, Overwrite) -->
+                            <Grid x:Name="AiActionControlsBar" ColumnDefinitions="Auto, *, Auto, 8, Auto" Margin="0, 4, 0, 0">
+                                <!-- Compare Original Button (Press & Hold) -->
+                                <Button Grid.Column="0"
+                                        Text="👁️ Giữ so ảnh gốc"
+                                        BackgroundColor="#33FFFFFF"
+                                        TextColor="#FFFFFF"
+                                        FontSize="11"
+                                        FontAttributes="Bold"
+                                        CornerRadius="14"
+                                        Padding="10, 0"
+                                        HeightRequest="32"
+                                        Pressed="OnCompareOriginalPressed"
+                                        Released="OnCompareOriginalReleased" />
+
+                                <!-- Save as new copy -->
+                                <Border Grid.Column="2"
+                                        BackgroundColor="#223322"
+                                        Stroke="#554ADE80"
+                                        StrokeThickness="0.8"
+                                        Padding="10, 6">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnSaveAiCopyClicked" /></Border.GestureRecognizers>
+                                    <Label Text="💾 Lưu bản mới" TextColor="#4ADE80" FontSize="11" FontAttributes="Bold" />
+                                </Border>
+
+                                <!-- Overwrite current -->
+                                <Border Grid.Column="4"
+                                        BackgroundColor="#FFB800"
+                                        Padding="12, 6">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOverwriteAiClicked" /></Border.GestureRecognizers>
+                                    <Label Text="✓ Ghi đè" TextColor="#000000" FontSize="11" FontAttributes="Bold" />
+                                </Border>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Footer: Specs summary + Complete Pro Tools Toolbar -->
+                <Border x:Name="SinglePhotoBottomBar"
+                        Grid.Row="2"
+                        BackgroundColor="#1C1C1E"
+                        Stroke="#33FFFFFF"
+                        StrokeThickness="0.8"
+                        Padding="12, 10">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="18" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="8">
+                        <!-- Quick Specs Summary Line -->
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label x:Name="ModalFileNameLabel"
+                                   Grid.Column="0"
+                                   Text="IMG_...jpg"
+                                   TextColor="#FFFFFF"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   LineBreakMode="TailTruncation"
+                                   VerticalOptions="Center" />
+                            <Label x:Name="ModalSpecsLabel"
+                                   Grid.Column="1"
+                                   Text="Dung lượng: 0 KB"
+                                   TextColor="#FFB800"
+                                   FontSize="11"
+                                   VerticalOptions="Center" />
+                        </Grid>
+
+                        <!-- Tools Ribbon: 5 Streamlined Core Actions: AI Studio, Share, Rotate, Details, Delete -->
+                        <Grid ColumnDefinitions="*, *, *, *, *">
+                            <!-- 1. AI Studio -->
+                            <VerticalStackLayout Grid.Column="0" Spacing="3" HorizontalOptions="Center">
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnToggleAiStudioClicked" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Border WidthRequest="42" HeightRequest="42" BackgroundColor="#2B2610" Stroke="#88FFB800" StrokeThickness="1">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="21" /></Border.StrokeShape>
+                                    <Path Data="{StaticResource IconAiSparkleData}" Fill="#FFB800" Aspect="Uniform" WidthRequest="18" HeightRequest="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="AI Studio" TextColor="#FFB800" FontSize="10.5" FontAttributes="Bold" LineBreakMode="NoWrap" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+
+                            <!-- 2. Share -->
+                            <VerticalStackLayout Grid.Column="1" Spacing="3" HorizontalOptions="Center">
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSharePhotoClicked" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Border WidthRequest="42" HeightRequest="42" BackgroundColor="#242428" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="21" /></Border.StrokeShape>
+                                    <Path Data="{StaticResource IconShareData}" Fill="#FFFFFF" Aspect="Uniform" WidthRequest="18" HeightRequest="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="Chia sẻ" TextColor="#DDFFFFFF" FontSize="10.5" LineBreakMode="NoWrap" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+
+                            <!-- 3. Rotate 90 deg -->
+                            <VerticalStackLayout Grid.Column="2" Spacing="3" HorizontalOptions="Center">
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRotatePhotoClicked" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Border WidthRequest="42" HeightRequest="42" BackgroundColor="#242428" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="21" /></Border.StrokeShape>
+                                    <Path Data="{StaticResource IconRotateRightData}" Fill="#FFFFFF" Aspect="Uniform" WidthRequest="18" HeightRequest="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="Xoay" TextColor="#DDFFFFFF" FontSize="10.5" LineBreakMode="NoWrap" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+
+                            <!-- 4. Details -->
+                            <VerticalStackLayout Grid.Column="3" Spacing="3" HorizontalOptions="Center">
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnPhotoDetailsClicked" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Border WidthRequest="42" HeightRequest="42" BackgroundColor="#242428" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="21" /></Border.StrokeShape>
+                                    <Path Data="{StaticResource IconInfoData}" Fill="#FFFFFF" Aspect="Uniform" WidthRequest="18" HeightRequest="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="Chi tiết" TextColor="#DDFFFFFF" FontSize="10.5" LineBreakMode="NoWrap" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+
+                            <!-- 5. Delete -->
+                            <VerticalStackLayout Grid.Column="4" Spacing="3" HorizontalOptions="Center">
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnDeleteCurrentPhotoClicked" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Border WidthRequest="42" HeightRequest="42" BackgroundColor="#33EF4444" Stroke="#66EF4444" StrokeThickness="1">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="21" /></Border.StrokeShape>
+                                    <Path Data="{StaticResource IconDeleteData}" Fill="#EF4444" Aspect="Uniform" WidthRequest="18" HeightRequest="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="Xóa" TextColor="#EF4444" FontSize="10.5" FontAttributes="Bold" LineBreakMode="NoWrap" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- MODE 2: Gallery Grid View (Toàn bộ kho ảnh) -->
+            <Grid x:Name="GalleryGridView"
+                  RowDefinitions="Auto, Auto, Auto, *"
+                  Padding="16, 44, 16, 16"
+                  BackgroundColor="#000000"
+                  IsVisible="False">
+
+                <!-- Row 0: Grid Header (Streamlined) -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto">
+                    <Border Grid.Column="0"
+                            BackgroundColor="#22FFFFFF"
+                            Padding="12, 6">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSwitchToSingleViewClicked" />
+                        </Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                            <Path Data="{StaticResource IconChevronLeftData}"
+                                  Fill="#FFFFFF"
+                                  Aspect="Uniform"
+                                  WidthRequest="12"
+                                  HeightRequest="12"
+                                  VerticalOptions="Center" />
+                            <Label Text="Xem ảnh"
+                                   TextColor="#FFFFFF"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <!-- Center: Clean Title + Stats Subtitle -->
+                    <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="Kho ảnh"
+                               TextColor="#FFFFFF"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center" />
+                        <Label x:Name="GalleryStatsLabel"
+                               Text="0 ảnh • 0 MB"
+                               TextColor="#88FFFFFF"
+                               FontSize="10.5"
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+
+                    <!-- Right Buttons: Multi-Select Toggle & Close -->
+                    <HorizontalStackLayout Grid.Column="2" Spacing="8" VerticalOptions="Center">
+                        <Border x:Name="BtnMultiSelectToggle"
+                                BackgroundColor="#22FFFFFF"
+                                Padding="12, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnToggleMultiSelectClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="MultiSelectToggleLabel" Text="Chọn" TextColor="#FFB800" FontSize="12" FontAttributes="Bold" />
+                        </Border>
+
+                        <Border BackgroundColor="#22FFFFFF"
+                                WidthRequest="32"
+                                HeightRequest="32">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnCloseModalClicked" />
+                            </Border.GestureRecognizers>
+                            <Path Data="{StaticResource IconCloseData}"
+                                  Fill="#FFFFFF"
+                                  Aspect="Uniform"
+                                  WidthRequest="12"
+                                  HeightRequest="12"
+                                  HorizontalOptions="Center"
+                                  VerticalOptions="Center" />
+                        </Border>
+                    </HorizontalStackLayout>
+                </Grid>
+
+                <!-- Row 1: Streamlined Unified Filter & Sort Strip (Single Row) -->
+                <ScrollView Grid.Row="1"
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            Margin="0, 8, 0, 8">
+                    <HorizontalStackLayout Spacing="6" Padding="0, 2">
+                        <!-- Filters -->
+                        <Border x:Name="FilterAllBorder" BackgroundColor="#FFCC00" Padding="12, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnFilterAllClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="FilterAllLabel" Text="Tất cả" TextColor="#000000" FontSize="11" FontAttributes="Bold" />
+                        </Border>
+                        <Border x:Name="Filter48MpBorder" BackgroundColor="#222222" Padding="12, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnFilter48MpClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="Filter48MpLabel" Text="48 MP" TextColor="#FFFFFF" FontSize="11" />
+                        </Border>
+                        <Border x:Name="FilterRawBorder" BackgroundColor="#222222" Padding="12, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnFilterRawClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="FilterRawLabel" Text="RAW" TextColor="#FFFFFF" FontSize="11" />
+                        </Border>
+                        <Border x:Name="FilterAiBorder" BackgroundColor="#222222" Padding="12, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnFilterAiClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="FilterAiLabel" Text="CAM AI" TextColor="#FFFFFF" FontSize="11" />
+                        </Border>
+                        <Border x:Name="FilterPhotoBorder" BackgroundColor="#222222" Padding="12, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnFilterPhotoClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="FilterPhotoLabel" Text="PHOTO" TextColor="#FFFFFF" FontSize="11" />
+                        </Border>
+
+                        <!-- Sleek Vertical Separator -->
+                        <BoxView WidthRequest="1" HeightRequest="16" Color="#33FFFFFF" VerticalOptions="Center" Margin="4, 0" />
+
+                        <!-- Sort Pills -->
+                        <Border x:Name="SortNewestBorder" BackgroundColor="#333338" Padding="10, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnSortNewestClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="SortNewestLabel" Text="Mới nhất" TextColor="#FFB800" FontSize="11" FontAttributes="Bold" />
+                        </Border>
+                        <Border x:Name="SortOldestBorder" BackgroundColor="#1E1E22" Padding="10, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnSortOldestClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="SortOldestLabel" Text="Cũ nhất" TextColor="#888888" FontSize="11" />
+                        </Border>
+                        <Border x:Name="SortSizeBorder" BackgroundColor="#1E1E22" Padding="10, 6">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnSortSizeClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="SortSizeLabel" Text="Dung lượng" TextColor="#888888" FontSize="11" />
+                        </Border>
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <!-- Row 2: Multi-Select Batch Action Bar (Appears when selection mode active) -->
+                <Border x:Name="MultiSelectActionBar"
+                        Grid.Row="2"
+                        IsVisible="False"
+                        BackgroundColor="#26262B"
+                        Stroke="#44FFB800"
+                        StrokeThickness="0.8"
+                        Padding="12, 6"
+                        Margin="0, 0, 0, 8">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto, *, Auto, 8, Auto">
+                        <Border Grid.Column="0" BackgroundColor="#33FFFFFF" Padding="8, 4">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnSelectAllPhotosClicked" /></Border.GestureRecognizers>
+                            <Label x:Name="SelectAllLabel" Text="Chọn tất cả" TextColor="#FFFFFF" FontSize="11" />
+                        </Border>
+
+                        <Label x:Name="SelectedCountLabel"
+                               Grid.Column="1"
+                               Text="Đã chọn: 0"
+                               TextColor="#FFB800"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+
+                        <!-- Batch Share -->
+                        <Border Grid.Column="2" BackgroundColor="#224422" Stroke="#664ADE80" StrokeThickness="0.8" Padding="10, 4">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnShareSelectedPhotosClicked" /></Border.GestureRecognizers>
+                            <Label Text="📤 Chia sẻ" TextColor="#4ADE80" FontSize="11" FontAttributes="Bold" />
+                        </Border>
+
+                        <!-- Batch Delete -->
+                        <Border Grid.Column="4" BackgroundColor="#44EF4444" Stroke="#88EF4444" StrokeThickness="0.8" Padding="10, 4">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnDeleteSelectedPhotosClicked" /></Border.GestureRecognizers>
+                            <Label Text="🗑️ Xóa" TextColor="#EF4444" FontSize="11" FontAttributes="Bold" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Row 3: Photos CollectionView Grid (3 Columns) -->
+                <CollectionView Grid.Row="3"
+                                x:Name="GalleryCollectionView"
+                                SelectionMode="None">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical"
+                                         Span="3"
+                                         HorizontalItemSpacing="4"
+                                         VerticalItemSpacing="4" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border StrokeThickness="0" BackgroundColor="#1E1E1E" HeightRequest="116">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="6" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnGridPhotoTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid>
+                                    <Image Source="{Binding FilePath}"
+                                           Aspect="AspectFill"
+                                           HorizontalOptions="FillAndExpand"
+                                           VerticalOptions="FillAndExpand" />
+                                    <!-- Mini Badge -->
+                                    <Border HorizontalOptions="Start"
+                                            VerticalOptions="Start"
+                                            Margin="4"
+                                            Padding="4, 1"
+                                            BackgroundColor="#CC000000">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="4" /></Border.StrokeShape>
+                                        <Label Text="{Binding ModeTag}"
+                                               TextColor="#FFCC00"
+                                               FontSize="9"
+                                               FontAttributes="Bold" />
+                                    </Border>
+                                    <!-- Size label -->
+                                    <Label Text="{Binding FileSizeString}"
+                                           TextColor="#DDFFFFFF"
+                                           FontSize="9"
+                                           HorizontalOptions="End"
+                                           VerticalOptions="End"
+                                           Margin="4" />
+
+                                    <!-- Multi-Select Checkmark Circle -->
+                                    <Border IsVisible="{Binding IsSelectionMode}"
+                                            HorizontalOptions="End"
+                                            VerticalOptions="Start"
+                                            Margin="4"
+                                            WidthRequest="22"
+                                            HeightRequest="22"
+                                            BackgroundColor="{Binding SelectionBgColor}"
+                                            Stroke="{Binding SelectionBorderColor}"
+                                            StrokeThickness="1.5">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="11" /></Border.StrokeShape>
+                                        <Path Data="{StaticResource IconCheckData}"
+                                              Fill="{Binding SelectionCheckColor}"
+                                              Aspect="Uniform"
+                                              WidthRequest="12"
+                                              HeightRequest="12"
+                                              HorizontalOptions="Center"
+                                              VerticalOptions="Center" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Grid>
+
+            <!-- Photo Details / Metadata Overlay Modal -->
+            <Border x:Name="PhotoDetailsModal"
+                    IsVisible="False"
+                    VerticalOptions="Center"
+                    HorizontalOptions="Center"
+                    WidthRequest="320"
+                    BackgroundColor="#F418181C"
+                    Stroke="#44FFB800"
+                    StrokeThickness="1"
+                    Padding="18, 16"
+                    ZIndex="40">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="7" VerticalOptions="Center">
+                            <Path Data="{StaticResource IconInfoData}"
+                                  Fill="#FFB800"
+                                  Aspect="Uniform"
+                                  WidthRequest="16"
+                                  HeightRequest="16"
+                                  VerticalOptions="Center" />
+                            <Label Text="CHI TIẾT ẢNH" TextColor="#FFB800" FontSize="13" FontAttributes="Bold" CharacterSpacing="1" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Border Grid.Column="1" WidthRequest="26" HeightRequest="26" BackgroundColor="#22FFFFFF" StrokeThickness="0">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="13" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnCloseDetailsClicked" /></Border.GestureRecognizers>
+                            <Path Data="{StaticResource IconCloseData}" Fill="#FFFFFF" Aspect="Uniform" WidthRequest="10" HeightRequest="10" HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                    </Grid>
+
+                    <BoxView HeightRequest="0.8" Color="#33FFFFFF" />
+
+                    <VerticalStackLayout Spacing="8">
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="TÊN TỆP" TextColor="#888888" FontSize="10" FontAttributes="Bold" />
+                            <Label x:Name="DetailsFileNameLabel" Text="IMG_...jpg" TextColor="#FFFFFF" FontSize="12" LineBreakMode="MiddleTruncation" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="ĐỘ PHÂN GIẢI &amp; KÍCH THƯỚC" TextColor="#888888" FontSize="10" FontAttributes="Bold" />
+                            <Label x:Name="DetailsResolutionLabel" Text="-- x -- • -- MB" TextColor="#FFFFFF" FontSize="12" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="THỜI GIAN CHỤP" TextColor="#888888" FontSize="10" FontAttributes="Bold" />
+                            <Label x:Name="DetailsDateLabel" Text="--:--" TextColor="#FFFFFF" FontSize="12" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="CHẾ ĐỘ &amp; PHÂN HỆ" TextColor="#888888" FontSize="10" FontAttributes="Bold" />
+                            <Label x:Name="DetailsModeLabel" Text="CAM AI" TextColor="#FFB800" FontSize="12" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="ĐƯỜNG DẪN LƯU TRỮ" TextColor="#888888" FontSize="10" FontAttributes="Bold" />
+                            <Label x:Name="DetailsPathLabel" Text="/storage/..." TextColor="#AAAAAA" FontSize="11" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Quick Tools: Flip & Duplicate inside Details -->
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="8">
+                        <Border Grid.Column="0" BackgroundColor="#26262C" Padding="10, 7">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnFlipPhotoClicked" /></Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Path Data="{StaticResource IconFlipHorizontalData}" Fill="#FFFFFF" Aspect="Uniform" WidthRequest="13" HeightRequest="13" VerticalOptions="Center" />
+                                <Label Text="Lật ảnh" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+                        <Border Grid.Column="1" BackgroundColor="#26262C" Padding="10, 7">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnDuplicatePhotoClicked" /></Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Path Data="{StaticResource IconDuplicateData}" Fill="#FFFFFF" Aspect="Uniform" WidthRequest="13" HeightRequest="13" VerticalOptions="Center" />
+                                <Label Text="Nhân bản" TextColor="#FFFFFF" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <Button Text="Đóng"
+                            BackgroundColor="#2A2A30"
+                            TextColor="#FFFFFF"
+                            FontSize="12"
+                            CornerRadius="14"
+                            HeightRequest="36"
+                            Clicked="OnCloseDetailsClicked" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

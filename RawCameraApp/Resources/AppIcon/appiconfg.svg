@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Titanium Outer Bezel Metallic Gradient -->
+    <linearGradient id="bezelMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3F3F46" />
+      <stop offset="35%" stop-color="#18181B" />
+      <stop offset="70%" stop-color="#27272A" />
+      <stop offset="100%" stop-color="#09090B" />
+    </linearGradient>
+
+    <!-- Luxury Cinema Gold Optics Ring -->
+    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#FFE066" />
+      <stop offset="30%" stop-color="#FFB800" />
+      <stop offset="70%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+
+    <!-- Sapphire Multi-Coated Optical Glass -->
+    <radialGradient id="opticGlass" cx="38%" cy="36%" r="64%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.8" />
+      <stop offset="35%" stop-color="#6366F1" stop-opacity="0.5" />
+      <stop offset="70%" stop-color="#0F172A" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+
+    <!-- Center Aperture Core Pupil -->
+    <radialGradient id="irisCore" cx="48%" cy="48%" r="52%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="65%" stop-color="#0A0E17" />
+      <stop offset="100%" stop-color="#000000" />
+    </radialGradient>
+  </defs>
+
+  <!-- Centered Precision RAW • PRO Aperture System (Safe Zone R <= 140) -->
+  <g transform="translate(0, 0)">
+    <!-- 1. Dark Knurled Titanium Outer Bezel -->
+    <circle cx="228" cy="228" r="136" fill="url(#bezelMetal)" stroke="#52525B" stroke-width="2.5" />
+
+    <!-- 2. Radial Mechanical Index Calibrations -->
+    <g stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" opacity="0.85">
+      <line x1="228" y1="96" x2="228" y2="106" stroke="#FFB800" stroke-width="2.5" />
+      <line x1="228" y1="350" x2="228" y2="360" />
+      <line x1="96" y1="228" x2="106" y2="228" />
+      <line x1="350" y1="228" x2="360" y2="228" />
+      <line x1="135" y1="135" x2="142" y2="142" />
+      <line x1="314" y1="314" x2="321" y2="321" />
+      <line x1="314" y1="135" x2="321" y2="142" />
+      <line x1="135" y1="314" x2="142" y2="321" />
+    </g>
+
+    <!-- 3. Chiseled Anodized Collar Ring -->
+    <circle cx="228" cy="228" r="122" fill="#111827" stroke="#27272A" stroke-width="3" />
+
+    <!-- 4. SIGNATURE BOLD CINEMA GOLD RING -->
+    <circle cx="228" cy="228" r="112" fill="#09090B" stroke="url(#goldRing)" stroke-width="9" />
+
+    <!-- 5. Sapphire Multi-Coated Optical Glass Element -->
+    <circle cx="228" cy="228" r="98" fill="url(#opticGlass)" stroke="#0284C7" stroke-width="1.8" />
+
+    <!-- 6. 6 Interlocking Precision Aperture Blades -->
+    <g fill="#1E293B" stroke="#FFB800" stroke-width="1.8" opacity="0.95">
+      <!-- Blade 1 -->
+      <path d="M 228 132 L 272 182 L 216 198 Z" />
+      <!-- Blade 2 -->
+      <path d="M 288 156 L 304 224 L 244 216 Z" />
+      <!-- Blade 3 -->
+      <path d="M 310 220 L 282 278 L 238 244 Z" />
+      <!-- Blade 4 -->
+      <path d="M 282 280 L 226 308 L 214 248 Z" />
+      <!-- Blade 5 -->
+      <path d="M 226 308 L 178 256 L 234 240 Z" />
+      <!-- Blade 6 -->
+      <path d="M 166 244 L 150 176 L 210 184 Z" />
+    </g>
+
+    <!-- 7. Center Iris Core Pupil -->
+    <circle cx="228" cy="228" r="32" fill="url(#irisCore)" stroke="#FFB800" stroke-width="2" />
+
+    <!-- 8. Center Precision Optical Point -->
+    <circle cx="228" cy="228" r="3" fill="#FFE066" />
+
+    <!-- 9. Specular Lens Reflection Arc -->
+    <path d="M 174 176 A 62 62 0 0 1 254 156" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.55" />
+
+    <!-- 10. ICONIC LEICA RED DOT MOUNT INDEX (Centered at 12 o'clock) -->
+    <circle cx="228" cy="101" r="6" fill="#EF4444" stroke="#FFFFFF" stroke-width="1.5" />
+  </g>
+</svg>

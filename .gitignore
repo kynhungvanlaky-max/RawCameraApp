@@ -1,0 +1,28 @@
+# .NET & Visual Studio
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+.vs/
+.vscode/
+.idea/
+*.user
+*.userprefs
+*.suo
+*.sln.docstates
+
+# Android build outputs & packages
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Temporary scratch & test artifacts in root
+/scratch/
+/*.png
+/*.jpg
+/*.onnx
+
+# OS generated files
+.DS_Store
+Thumbs.db
